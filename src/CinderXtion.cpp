@@ -37,7 +37,8 @@
 #include "CinderXtion.h"
 
 #include "cinder/app/App.h"
-#include <Windows.h>
+
+#include <chrono>
 
 namespace Xtion
 {
@@ -69,12 +70,12 @@ namespace Xtion
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
 
-	Bone::Bone( JointName jointName, const Vec3f &position )
+	Bone::Bone( JointName jointName, const vec3 &position )
 		: mJointName( jointName ), mPosition( position )
 	{
 	}
 
-	const Vec3f& Bone::getPosition() const
+	const vec3& Bone::getPosition() const
 	{
 		return mPosition;
 	}
@@ -170,7 +171,7 @@ namespace Xtion
 		return mDataAudio;
 	}
 
-	uint32_t Device::getAudioBufferSize() const
+	size_t Device::getAudioBufferSize() const
 	{
 		return mDataAudioSize;
 	}
@@ -182,15 +183,15 @@ namespace Xtion
 		return mChannelDepth;
 	}
 
-	float Device::getDepthAt( const ci::Vec2i &position )
+	float Device::getDepthAt( const ci::ivec2 &position )
 	{
-		if ( mChannelDepth ) {
+		if ( mChannelDepth.getWidth() ) {
 			return 1.0f - (float)( mChannelDepth.getValue( position ) / ( 1.0 * 0x8000 ) ) * 10.0f;
 		}
 		return 0.0f;
 	}
 
-	Vec2i Device::getDepthSize()
+	ivec2 Device::getDepthSize()
 	{
 		boost::lock_guard<boost::mutex> lock( mMutexDepth );
 		return mSizeDepth;
@@ -203,7 +204,7 @@ namespace Xtion
 		return mChannelInfrared;
 	}
 
-	Vec2i Device::getInfraredSize()
+	ivec2 Device::getInfraredSize()
 	{
 		boost::lock_guard<boost::mutex> lock( mMutexInfrared );
 		return mSizeInfrared;
@@ -223,7 +224,7 @@ namespace Xtion
 		return mChannelUserImage;
 	}
 
-	Vec2i Device::getUserImageSize()
+	ivec2 Device::getUserImageSize()
 	{
 		boost::lock_guard<boost::mutex> lock( mMutexUser );
 		return mSizeUserImage;
@@ -236,7 +237,7 @@ namespace Xtion
 		return mSurfaceVideo;
 	}
 
-	Vec2i Device::getVideoSize()
+	ivec2 Device::getVideoSize()
 	{
 		boost::lock_guard<boost::mutex> lock( mMutexVideo );
 		return mSizeVideo;
@@ -266,10 +267,10 @@ namespace Xtion
 		mNewVideoFrame				= false;
 		mPaused						= false;
 		mRemoveBackground			= false;
-		mSizeDepth					= Vec2i::zero();
-		mSizeInfrared				= Vec2i::zero();
-		mSizeUserImage				= Vec2i::zero();
-		mSizeVideo					= Vec2i::zero();
+		mSizeDepth					= ivec2();
+		mSizeInfrared				= ivec2();
+		mSizeUserImage				= ivec2();
+		mSizeVideo					= ivec2();
 		mRunning					= false;
 		mSkeletons.clear();
 	}
@@ -372,10 +373,10 @@ namespace Xtion
 
 					if ( mEnabledDepth ) {
 						mGeneratorDepth.GetMetaData( mMetaDataDepth );
-						mSizeDepth = Vec2i( mMetaDataDepth.XRes(), mMetaDataDepth.YRes() );
+						mSizeDepth = ivec2( mMetaDataDepth.XRes(), mMetaDataDepth.YRes() );
 						uint32_t count = mSizeDepth.x * mSizeDepth.y;
 						mDataDepth = (uint16_t*)mMetaDataDepth.Data();
-						if ( !mChannelDepth ) {
+						if ( !mChannelDepth.getWidth() ) {
 							mChannelDepth = Channel16u( mSizeDepth.x, mSizeDepth.y );
 						}
 						memcpy( mChannelDepth.getData(), mDataDepth, count * mMetaDataDepth.BytesPerPixel() );
@@ -384,10 +385,10 @@ namespace Xtion
 
 					if ( mEnabledInfrared ) {
 						mGeneratorInfrared.GetMetaData( mMetaDataInfrared );
-						mSizeInfrared = Vec2i( mMetaDataInfrared.XRes(), mMetaDataInfrared.YRes() );
+						mSizeInfrared = ivec2( mMetaDataInfrared.XRes(), mMetaDataInfrared.YRes() );
 						uint32_t count = mSizeInfrared.x * mSizeInfrared.y;
 						mDataInfrared = (uint16_t*)mMetaDataInfrared.Data();
-						if ( !mChannelInfrared ) {
+						if ( !mChannelInfrared.getWidth() ) {
 							mChannelInfrared = Channel16u( mSizeInfrared.x, mSizeInfrared.y );
 						}
 						memcpy( mChannelInfrared.getData(), mDataInfrared, count * mMetaDataInfrared.BytesPerPixel() );
@@ -396,10 +397,10 @@ namespace Xtion
 
 					if ( mEnabledUserTracking && mGeneratorUser.IsNewDataAvailable() ) {
 						mGeneratorUser.GetUserPixels( 0, mMetaDataScene );
-						mSizeUserImage = Vec2i( mMetaDataScene.XRes(), mMetaDataScene.YRes() );
+						mSizeUserImage = ivec2( mMetaDataScene.XRes(), mMetaDataScene.YRes() );
 						uint32_t count = mSizeUserImage.x * mSizeUserImage.y;
 						mDataUserImage = (uint16_t*)mMetaDataScene.Data();
-						if ( !mChannelUserImage ) {
+						if ( !mChannelUserImage.getWidth() ) {
 							mChannelUserImage = Channel16u( mSizeInfrared.x, mSizeInfrared.y );
 						}
 						memcpy( mChannelUserImage.getData(), mDataUserImage, count * mMetaDataScene.BytesPerPixel() );
@@ -408,10 +409,10 @@ namespace Xtion
 
 					if ( mEnabledVideo ) {
 						mGeneratorVideo.GetMetaData( mMetaDataVideo );
-						mSizeVideo = Vec2i( mMetaDataVideo.XRes(), mMetaDataVideo.YRes() );
+						mSizeVideo = ivec2( mMetaDataVideo.XRes(), mMetaDataVideo.YRes() );
 						uint32_t count = mSizeVideo.x * mSizeVideo.y;
 						mDataVideo = (uint8_t*)mMetaDataVideo.Data();
-						if ( !mSurfaceVideo ) {
+						if ( !mSurfaceVideo.getWidth() ) {
 							mSurfaceVideo = Surface8u(  mSizeVideo.x, mSizeVideo.y, false, SurfaceChannelOrder::RGB );
 						}
 						memcpy( mSurfaceVideo.getData(), mDataVideo, count * mMetaDataVideo.BytesPerPixel() );
@@ -419,7 +420,7 @@ namespace Xtion
 					}
 				}
 			}
-			Sleep( 7 );
+            std::this_thread::sleep_for(std::chrono::milliseconds(7));
 		}
 	}
 

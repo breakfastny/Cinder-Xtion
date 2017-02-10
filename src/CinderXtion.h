@@ -44,6 +44,7 @@
 #include "XnCodecIDs.h"
 #include "XnCppWrapper.h"
 #include <map>
+#include <boost/thread/thread.hpp>
 
 namespace Xtion
 {
@@ -63,12 +64,12 @@ namespace Xtion
 	class Bone
 	{
 	public:
-		const ci::Vec3f&				getPosition() const;
+		const ci::vec3&				getPosition() const;
 	private:
-		Bone( JointName jointName, const ci::Vec3f &position );
+		Bone( JointName jointName, const ci::vec3 &position );
 		
 		JointName						mJointName;
-		ci::Vec3f						mPosition;
+		ci::vec3						mPosition;
 
 		friend class					Device;
 	};
@@ -100,25 +101,25 @@ namespace Xtion
 
 		bool							checkNewDepthFrame();
 		ci::Channel16u					getDepth();
-		float							getDepthAt( const ci::Vec2i &position );
-		ci::Vec2i						getDepthSize();
+		float							getDepthAt( const ci::ivec2 &position );
+		ci::ivec2						getDepthSize();
 		
 		bool							checkNewInfraredFrame();
 		ci::Channel16u					getInfrared();
-		ci::Vec2i						getInfraredSize();
+		ci::ivec2						getInfraredSize();
 
 		bool							checkNewUserData();
 		std::vector<Skeleton>			getSkeletons();
 		ci::Channel16u					getUserImage();
-		ci::Vec2i						getUserImageSize();
+		ci::ivec2						getUserImageSize();
 
 		bool							checkNewVideoFrame();
 		ci::Surface8u					getVideo();
-		ci::Vec2i						getVideoSize();
+		ci::ivec2						getVideoSize();
 
-		ci::Vec2i						getSkeletonDepthPos( const ci::Vec3f &position );
-		ci::Vec2i						getSkeletonInfraredPos( const ci::Vec3f &position );
-		ci::Vec2i						getSkeletonVideoPos( const ci::Vec3f &position );
+		ci::ivec2						getSkeletonDepthPos( const ci::vec3 &position );
+		ci::ivec2						getSkeletonInfraredPos( const ci::vec3 &position );
+		ci::ivec2						getSkeletonVideoPos( const ci::vec3 &position );
 	private:
 		typedef std::shared_ptr<boost::thread>	ThreadRef;
 
@@ -205,10 +206,10 @@ namespace Xtion
 		ci::Surface8u					mSurfaceVideo;
 		std::vector<Skeleton>			mSkeletons;
 
-		ci::Vec2i						mSizeDepth;
-		ci::Vec2i						mSizeInfrared;
-		ci::Vec2i						mSizeUserImage;
-		ci::Vec2i						mSizeVideo;
+		ci::ivec2						mSizeDepth;
+		ci::ivec2						mSizeInfrared;
+		ci::ivec2						mSizeUserImage;
+		ci::ivec2						mSizeVideo;
 	};
 
 }
