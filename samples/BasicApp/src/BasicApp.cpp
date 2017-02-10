@@ -35,8 +35,10 @@
 */
 
 // Includes
-#include "cinder/app/AppBasic.h"
+#include "cinder/app/App.h"
+#include "cinder/app/RendererGl.h"
 #include "cinder/Arcball.h"
+#include "cinder/Sphere.h"
 #include "cinder/Camera.h"
 #include "cinder/gl/gl.h"
 #include "cinder/gl/Texture.h"
@@ -48,7 +50,7 @@
 * This application demonstrates how to represent the 
 * Xtion's depth image in 3D space.
 */
-class BasicApp : public ci::app::AppBasic 
+class BasicApp : public ci::app::App
 {
 
 public:
@@ -58,7 +60,7 @@ public:
 	void keyDown( ci::app::KeyEvent event );
 	void mouseDown( ci::app::MouseEvent event );
 	void mouseDrag( ci::app::MouseEvent event );
-	void prepareSettings( ci::app::AppBasic::Settings * settings );
+	void prepareSettings( Settings * settings );
 	void shutdown();
 	void setup();
 	void update();
@@ -67,18 +69,19 @@ private:
 
 	// Xtion
 	Xtion::DeviceRef		mDevice;
-	ci::Vec2i				mInputSize;
+	ci::ivec2				mInputSize;
 
 	// Depth points
-	std::vector<ci::Vec3f>	mPoints;
+	std::vector<ci::vec3>	mPoints;
 
 	// Camera
 	ci::Arcball				mArcball;
+	ci::Sphere			    mEarthSphere;
 	ci::CameraPersp			mCamera;
 
-	ci::Channel16u			mDepth;
-	ci::Surface8u			mVideo;
-	ci::Channel16u			mUserImage;
+	ci::Channel16u  		mDepth;
+	ci::Surface8u   		mVideo;
+	ci::Channel16u  		mUserImage;
 
 	// Save screen shot
 	void					screenShot();
@@ -96,7 +99,7 @@ void BasicApp::draw()
 {
 
 	// Clear window
-	gl::setViewport( getWindowBounds() );
+	gl::viewport( 0, 0, getWindowWidth(), getWindowHeight() );
 	gl::clear( Colorf::black() );
 
 	// Half window size
@@ -105,26 +108,26 @@ void BasicApp::draw()
 
 	gl::setMatricesWindow( getWindowSize() );
 	gl::color( ColorAf::white() );
-	if ( mDepth ) {
-		gl::draw( gl::Texture( mDepth ), mDepth.getBounds(), Rectf( 0.0f, height * 0.5f, width, height * 1.5f ) );
+	if ( mDepth.getWidth() ) {
+		gl::draw( gl::Texture::create( mDepth ), mDepth.getBounds(), Rectf( 0.0f, height * 0.5f, width, height * 1.5f ) );
 	}
-	if ( mUserImage ) {
-		gl::draw( gl::Texture( mUserImage ), mUserImage.getBounds(), Rectf( 0.0f, height * 0.5f, width, height * 1.5f ) );
+	if ( mUserImage.getWidth() ) {
+		gl::draw( gl::Texture::create( mUserImage ), mUserImage.getBounds(), Rectf( 0.0f, height * 0.5f, width, height * 1.5f ) );
 	}
-	if ( mVideo ) {
-		gl::draw( gl::Texture( mVideo ), mVideo.getBounds(), Rectf( width, height * 0.5f, width * 2.0f, height * 1.5f ) );
+	if ( mVideo.getWidth() ) {
+		gl::draw( gl::Texture::create( mVideo ), mVideo.getBounds(), Rectf( width, height * 0.5f, width * 2.0f, height * 1.5f ) );
 	}
 	gl::setMatrices( mCamera );
 	gl::rotate( mArcball.getQuat() );
 
 	// Draw point cloud
-	glBegin( GL_POINTS );
-	for ( vector<Vec3f>::const_iterator pointIt = mPoints.cbegin(); pointIt != mPoints.cend(); ++pointIt ) {
+	gl::begin( GL_POINTS );
+	for ( vector<vec3>::const_iterator pointIt = mPoints.cbegin(); pointIt != mPoints.cend(); ++pointIt ) {
 		float depth = 1.0f - pointIt->z / ( mCamera.getEyePoint().z * -2.0f );
 		gl::color( ColorAf( 1.0f, depth, 1.0f - depth, depth ) );
 		gl::vertex( *pointIt );
 	}
-	glEnd();
+	gl::end();
 
 }
 
@@ -146,12 +149,12 @@ void BasicApp::keyDown( KeyEvent event )
 
 void BasicApp::mouseDown( ci::app::MouseEvent event )
 {
-	mArcball.mouseDown( event.getPos() );
+	mArcball.mouseDown( event );
 }
 
 void BasicApp::mouseDrag( ci::app::MouseEvent event )
 {
-	mArcball.mouseDrag( event.getPos() );
+	mArcball.mouseDrag( event );
 }
 
 // Prepare window
@@ -173,24 +176,24 @@ void BasicApp::setup()
 
 	// Set up OpenGL
 	gl::enable( GL_DEPTH_TEST );
-	glHint( GL_POINT_SMOOTH_HINT, GL_NICEST );
-	glEnable( GL_POINT_SMOOTH );
+	//glHint( GL_POINT_SMOOTH_HINT, GL_NICEST );
+	//glEnable( GL_POINT_SMOOTH );
 	glPointSize( 0.25f );
 	gl::enableAlphaBlending();
 	gl::enableAdditiveBlending();
 	gl::color( ColorAf::white() );
 
-	mInputSize = Vec2i::zero();
+	mInputSize = ivec2();
 
 	// Start Xtion
 	mDevice = Device::create();
 	mDevice->start( getAppPath() / "data/config.xml" );
 
 	// Set up camera
-	mArcball = Arcball( getWindowSize() );
-	mArcball.setRadius( (float)getWindowHeight() );
-	mCamera.lookAt( Vec3f( 0.0f, 0.0f, 670.0f ), Vec3f::zero() );
+	mCamera.lookAt( vec3( 0.0f, 0.0f, 670.0f ), vec3() );
 	mCamera.setPerspective( 60.0f, getWindowAspectRatio(), 0.01f, 5000.0f );
+	mEarthSphere = Sphere( vec3( 0 ), 1 );
+	mArcball = Arcball( &mCamera, mEarthSphere );
 
 }
 
@@ -221,4 +224,4 @@ void BasicApp::update()
 }
 
 // Run application
-CINDER_APP_BASIC( BasicApp, RendererGl )
+CINDER_APP( BasicApp, RendererGl )
