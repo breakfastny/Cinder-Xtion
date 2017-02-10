@@ -187,7 +187,7 @@ void BasicApp::setup()
 
 	// Start Xtion
 	mDevice = Device::create();
-	mDevice->start( getAppPath() / "data/config.xml" );
+	mDevice->start( getAssetPath("config.xml") );
 
 	// Set up camera
 	mCamera.lookAt( vec3( 0.0f, 0.0f, 670.0f ), vec3() );
