@@ -3,8 +3,7 @@ set( CMAKE_VERBOSE_MAKEFILE ON )
 
 project( BasicApp )
 
-#get_filename_component( CINDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../Cinder" ABSOLUTE )
-get_filename_component( CINDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../breakfast-instaprint/Cinder" ABSOLUTE )
+get_filename_component( CINDER_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../../.." ABSOLUTE )
 get_filename_component( BLOCK_XTION_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../../../src" ABSOLUTE )
 get_filename_component( APP_PATH "${CMAKE_CURRENT_SOURCE_DIR}/../../" ABSOLUTE )
 
