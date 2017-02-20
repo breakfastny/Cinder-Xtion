@@ -37,6 +37,7 @@
 #include "CinderXtion.h"
 
 #include "cinder/app/App.h"
+#include "cinder/Log.h"
 
 #include <chrono>
 
@@ -61,11 +62,7 @@ namespace Xtion
 
 	void trace( const string &message )
 	{
-#if defined ( CINDER_MSW )
-		OutputDebugStringA( ( message + "\n" ).c_str() );
-#else
-		console() << message << endl;
-#endif
+		CI_LOG_D( message );
 	}
 
 	//////////////////////////////////////////////////////////////////////////////////////////////
